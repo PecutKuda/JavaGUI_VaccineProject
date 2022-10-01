@@ -1,9 +1,46 @@
 
+
+
+//Vaccine Table Project
+
+//Project ini adalah sebuah program Java GUI untuk menampilkan
+//Nama Vaksin, Harga Vaksin dan Stok Vaksin.
+
+//Kelompok 22
+//2440030241 - Reynald Slamat Putra
+//2440062924 - Charles Christopher
+//2440046984 - Elliot Lie Arifin
+
+//Operasi yang bisa dilakukan pada program ini adalah :
+
+//1. Add Vaccine 
+//dengan generate random ID, Nama Vaksin, Harga Vaksin dan Stok Vaksinnya. Setelah itu, membuat sebuah objek untuk penjelasan melalui factory yang telah dibuat berdasarkan Harga Vaksin yang diinput pengguna. Lalu menampilkan informasi apakah vaksin tergolong murah atau mahal berdasarkan harganya, jika >50.000 termasuk golongan mahal yang diambil dari hasil pembuatan objek di factory.
+
+//2. Update Vaccine
+//Hampir mirip dengan Add, dengan mengklik salah satu baris pada Table Vaccine, akan menampilkan informasi dari vaksin tersebut pada sebuah text field yang bisa diubah untuk diupdate. Proses menampilkan vaksin murah atau mahal juga sama dengan fitur Add.
+
+//3. Delete Vaccine 
+//Memilih salah satu baris pada table, lalu klik button delete, akan menghapus vaksin itu pada table.
+
+//4. Menampilkan Vaccine Table
+//Selalu memunculkan table Vaccine
+
+//Implementasi 2 design pattern:
+//Singleton = Koneksi DB pada class database.java
+//Factory = Pembuatan object pada class readerFactory.java
+
+//Penggunaan inheritance dan abstract kami terapkan pada class reader.java (interface)
+//Penggunaan encapsulation kami terapkan pada ExpensiveReader dan CheapReader
+
+//Pengimplementasian database transaction terjadi pada fitur add, update, dan delete
+//dengan menggunakan SELECT, INSERT INTO, SET, dan DELETE di class Vaccine_Table
+
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
+import java.awt.peer.ComponentPeer;
 import java.sql.SQLException;
 
 import javax.swing.JButton;
@@ -17,8 +54,7 @@ import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 
 import org.w3c.dom.events.MouseEvent;
-
-public class pudding_table {
+public class Vaccine_Table {
 
 	private JFrame frame;
 	private JTextField txtID;
@@ -34,11 +70,10 @@ public class pudding_table {
 	
 	private void initialize_gui()
 	{
-		frame = new JFrame("PT Pudding Application");
+		frame = new JFrame("Bumame Application");
 		frame.setBounds(100, 100, 539, 437);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
-		
 		
 		JPanel panel = new JPanel();
 		panel.setBackground(new Color(176, 196, 222));
@@ -46,11 +81,11 @@ public class pudding_table {
 		frame.getContentPane().add(panel);
 		panel.setLayout(null);
 		
-		JLabel lblID = new JLabel("Kode:");
+		JLabel lblID = new JLabel("ID:");
 		lblID.setBounds(21, 83, 46, 14);
 		panel.add(lblID);
 		
-		JLabel lblName = new JLabel("Nama:");
+		JLabel lblName = new JLabel("Vaksin:");
 		lblName.setBounds(21, 105, 46, 14);
 		panel.add(lblName);
 		
@@ -103,7 +138,6 @@ public class pudding_table {
 		btnUpdate.setBounds(133, 280, 75, 23);
 		panel.add(btnUpdate);
 		updateButtonEvent();
-		
 	}
 	private boolean isInt(JTextField input, String message)
 	{
@@ -123,7 +157,6 @@ public class pudding_table {
 			ID += (int) Math.floor(Math.random()*9 + 1);
 		}
 		return ID;
-		
 	}
 	private void clear_form()
 	{
@@ -139,12 +172,12 @@ public class pudding_table {
 		scrollPane.setViewportView(table);
 		model = new DefaultTableModel();
 		model.addColumn("No.");
-		model.addColumn("Kode");
-		model.addColumn("Nama");
+		model.addColumn("ID");
+		model.addColumn("Vaksin");
 		model.addColumn("Harga");
 		model.addColumn("Stok");
 	}
-	private void addButtonEvent()
+	public void addButtonEvent()
 	{
 		btnAdd.addActionListener(new ActionListener() {
 			@Override
@@ -164,6 +197,13 @@ public class pudding_table {
 							java.sql.PreparedStatement ps = con.prepareStatement(query);
 							ps.execute();
 							JOptionPane.showMessageDialog(null, "Data stored successfuly!");
+							String desc = null;
+							Integer vacPrice = Integer.valueOf(txtPrice.getText());
+							//implementasi factory untuk membuat object apakah vaksin tergolong murah atau mahal
+							//yang akan diproses oleh factory
+                            desc = readerFactory.getreader(vacPrice).read();
+                            JOptionPane.showMessageDialog(null, desc);   
+                            
 						}
 						else JOptionPane.showMessageDialog(null, "Menu price and stock must be integer!");
 					}
@@ -178,7 +218,6 @@ public class pudding_table {
 	private void tableClicked()
 	{
 		table.addMouseListener(new MouseListener() {
-
 			@Override
 			public void mouseClicked(java.awt.event.MouseEvent e) {
 				// TODO Auto-generated method stub
@@ -223,7 +262,7 @@ public class pudding_table {
 			
 		});
 	}
-	private void deleteButtonEvent()
+	public void deleteButtonEvent()
 	{
 		btnDelete.addActionListener(new ActionListener() {
 			@Override
@@ -248,33 +287,46 @@ public class pudding_table {
 			}
 		});
 	}
-	private void updateButtonEvent()
+	public void updateButtonEvent()
 	{
 		btnUpdate.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent evt) {
 				int selectedIndex = table.getSelectedRow();
+				
 				if (selectedIndex >= 0)
 				{
-					try {
-						String query = "UPDATE menu SET menu.name = '"+txtName.getText()+"', menu.price = '"+txtPrice.getText()+"', menu.stock = '"+txtStock.getText()+"' WHERE menu.id LIKE '" + txtID.getText() + "'";
-						System.out.println(query);
-						java.sql.Connection con = database.configDB();
-						java.sql.PreparedStatement ps = con.prepareStatement(query);
-						ps.execute();
-						JOptionPane.showMessageDialog(null, "Data updated successfuly!");
-					} catch (SQLException e) {
-						JOptionPane.showMessageDialog(null, e.getMessage());
-					}
+					if (txtName.getText().isEmpty() || txtPrice.getText().isEmpty() || txtStock.getText().isEmpty()) JOptionPane.showMessageDialog(null, "Please fill all the fields!");
+					else
+					{
+						try {
+							String query = "UPDATE menu SET menu.name = '"+txtName.getText()+"', menu.price = '"+txtPrice.getText()+"', menu.stock = '"+txtStock.getText()+"' WHERE menu.id LIKE '" + txtID.getText() + "'";
+							System.out.println(query);
+							java.sql.Connection con = database.configDB();
+							java.sql.PreparedStatement ps = con.prepareStatement(query);
+							ps.execute();
+							JOptionPane.showMessageDialog(null, "Data updated successfuly!");
+							String desc = null;
+							Integer vacPrice = Integer.valueOf(txtPrice.getText());
+							
+							//implementasi factory untuk membuat object apakah vaksin tergolong murah atau mahal
+							//yang akan diproses oleh factory
+                            desc = readerFactory.getreader(vacPrice).read();
+                            JOptionPane.showMessageDialog(null, desc);   
+						} catch (SQLException e) {
+							JOptionPane.showMessageDialog(null, e.getMessage());
+						}
+					} 
 					display_data();
 					clear_form();
+					
 				}
 				else JOptionPane.showMessageDialog(null, "Please select a row from data table first!");
 			}
 		});
 		
 	}
-	private void display_data()
+	public void display_data()
 	{
 		clear_form();
 		initialize_tables();
@@ -295,7 +347,7 @@ public class pudding_table {
 		}
 	}
 	
-	public pudding_table() {
+	public Vaccine_Table() {
 		// TODO Auto-generated constructor stub
 		initialize_gui();
 		display_data();
@@ -304,7 +356,7 @@ public class pudding_table {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					pudding_table pt = new pudding_table();
+					Vaccine_Table pt = new Vaccine_Table();
 					pt.frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
